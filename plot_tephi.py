@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import tephi
+import time
+import copy
 from datetime import datetime
 from siphon.simplewebservice.wyoming import WyomingUpperAir
 
@@ -7,6 +9,11 @@ from siphon.simplewebservice.wyoming import WyomingUpperAir
 CONST_G = 9.81
 CONST_R = 287
 CONST_K = 273.15
+
+
+sites = {'names': ['CAMBORNE', 'BARROW', 'MIAMI', 'BECHAR', 'MCMURDO'],
+             'ids': ['03808', '70026', '72202', '60571', '89664']}
+date = datetime(2024, 3, 26, 00)
 
 
 class Dataset:
@@ -48,36 +55,59 @@ def plot_tephi(data_list, title, group_list):
 
 ####################################################
 # Create a datetime object for the sounding and string of the station identifier.
-date = datetime(2024, 3, 28, 00)
-df_camborne = WyomingUpperAir.request_data(date, '03808')
-df_barrow = WyomingUpperAir.request_data(date, '70026')
-df_miami = WyomingUpperAir.request_data(date, '72202')
-df_bechar = WyomingUpperAir.request_data(date, '60571')
-df_mcmurdo = WyomingUpperAir.request_data(date, '89664')
 
-camborne_T = Dataset([p for p in df_camborne['pressure'].tolist() if p > 100], df_camborne['temperature'].tolist(), 'red', 'TEMPERATURE', 0)
-camborne_Td = Dataset([p for p in df_camborne['pressure'].tolist() if p > 100], df_camborne['dewpoint'].tolist(), 'blue', 'DEWPOINT', 0)
 
-barrow_T = Dataset([p for p in df_barrow['pressure'].tolist() if p > 100], df_barrow['temperature'].tolist(), 'red', 'TEMPERATURE', 1)
-barrow_Td = Dataset([p for p in df_barrow['pressure'].tolist() if p > 100], df_barrow['dewpoint'].tolist(), 'blue', 'DEWPOINT', 1)
+def plot_it(data_list, sites, num, date):
+    df_camborne = data_list[0]
+    df_barrow = data_list[1]
+    df_miami = data_list[2]
+    df_bechar = data_list[3]
+    df_mcmurdo = data_list[4]
 
-miami_T = Dataset([p for p in df_miami['pressure'].tolist() if p > 100], df_miami['temperature'].tolist(), 'red', 'TEMPERATURE', 2)
-miami_Td = Dataset([p for p in df_miami['pressure'].tolist() if p > 100], df_miami['dewpoint'].tolist(), 'blue', 'DEWPOINT', 2)
+    camborne_T = Dataset([p for p in df_camborne['pressure'].tolist() if p > 100], df_camborne['temperature'].tolist(), 'red', 'TEMPERATURE', 0)
+    camborne_Td = Dataset([p for p in df_camborne['pressure'].tolist() if p > 100], df_camborne['dewpoint'].tolist(), 'blue', 'DEWPOINT', 0)
 
-bechar_T = Dataset([p for p in df_bechar['pressure'].tolist() if p > 100], df_bechar['temperature'].tolist(), 'red', 'TEMPERATURE', 3)
-bechar_Td = Dataset([p for p in df_bechar['pressure'].tolist() if p > 100], df_bechar['dewpoint'].tolist(), 'blue', 'DEWPOINT', 3)
+    barrow_T = Dataset([p for p in df_barrow['pressure'].tolist() if p > 100], df_barrow['temperature'].tolist(), 'red', 'TEMPERATURE', 1)
+    barrow_Td = Dataset([p for p in df_barrow['pressure'].tolist() if p > 100], df_barrow['dewpoint'].tolist(), 'blue', 'DEWPOINT', 1)
 
-mcmurdo_T = Dataset([p for p in df_mcmurdo['pressure'].tolist() if p > 100], df_mcmurdo['temperature'].tolist(), 'red', 'TEMPERATURE', 4)
-mcmurdo_Td = Dataset([p for p in df_mcmurdo['pressure'].tolist() if p > 100], df_mcmurdo['dewpoint'].tolist(), 'blue', 'DEWPOINT', 4)
+    miami_T = Dataset([p for p in df_miami['pressure'].tolist() if p > 100], df_miami['temperature'].tolist(), 'red', 'TEMPERATURE', 2)
+    miami_Td = Dataset([p for p in df_miami['pressure'].tolist() if p > 100], df_miami['dewpoint'].tolist(), 'blue', 'DEWPOINT', 2)
 
-plot_list = [camborne_Td, camborne_T, barrow_Td, barrow_T, miami_Td, miami_T, bechar_Td, bechar_T, mcmurdo_Td, mcmurdo_T]
-plot_tephi(plot_list, 'CAMBORNE_20240328_00Z', [0])
+    bechar_T = Dataset([p for p in df_bechar['pressure'].tolist() if p > 100], df_bechar['temperature'].tolist(), 'red', 'TEMPERATURE', 3)
+    bechar_Td = Dataset([p for p in df_bechar['pressure'].tolist() if p > 100], df_bechar['dewpoint'].tolist(), 'blue', 'DEWPOINT', 3)
 
-#while (1):
-#    try:
-#        df_camborne = WyomingUpperAir.request_data(date, '03808')
-#    except:
-#        time.sleep(0.25)
-#    else:
-#        break
+    mcmurdo_T = Dataset([p for p in df_mcmurdo['pressure'].tolist() if p > 100], df_mcmurdo['temperature'].tolist(), 'red', 'TEMPERATURE', 4)
+    mcmurdo_Td = Dataset([p for p in df_mcmurdo['pressure'].tolist() if p > 100], df_mcmurdo['dewpoint'].tolist(), 'blue', 'DEWPOINT', 4)
 
+    plot_list = [camborne_Td, camborne_T, barrow_Td, barrow_T, miami_Td, miami_T, bechar_Td, bechar_T, mcmurdo_Td, mcmurdo_T]
+    time_string = date.strftime("%Y%m%d_%H")
+    plot_tephi(plot_list, sites['names'][num]+'_'+time_string, [num])
+
+def download_list(sites_dictionary, date):
+    data = []
+    pos = 0
+    num = len(sites_dictionary['ids'])
+    print('hello')
+    while True:
+        site_id = sites_dictionary['ids'][pos]
+        try:
+            new_list = copy.deepcopy(WyomingUpperAir.request_data(date, site_id))
+        except:
+            time.sleep(0.1)
+        else:
+            data.append(new_list)
+            pos += 1
+        if pos == num:
+            break
+
+    return data
+
+
+def plot_all(datasets, sites, date):
+    num = len(datasets)
+    for i in range(num):
+        plot_it(datasets, sites, i, date)
+
+
+datasets = download_list(sites, date)
+plot_all(datasets, sites, date)
