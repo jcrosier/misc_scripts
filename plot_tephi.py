@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import tephi
 import time
 import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from siphon.simplewebservice.wyoming import WyomingUpperAir
 
 
@@ -13,8 +13,13 @@ CONST_K = 273.15
 
 sites = {'names': ['CAMBORNE', 'BARROW', 'MIAMI', 'BECHAR', 'MCMURDO'],
              'ids': ['03808', '70026', '72202', '60571', '89664']}
-date = datetime(2024, 3, 26, 00)
 
+sites_2 = {'names': ['BARROW', 'MIAMI'],
+             'ids': ['70026', '72202']}
+
+dates = [datetime(2024, 3, 20, 00), datetime(2024, 3, 22, 00), timedelta(hours=12)]
+
+date = datetime(2024, 3, 26, 00)
 
 class Dataset:
     def __init__(self, p_data, t_data, color, label, group):
@@ -22,6 +27,28 @@ class Dataset:
         self.color = color
         self.label = label
         self.group = group
+
+
+#todo check if file/data already exists before attempting to download
+def download_sonde_to_csv(site_list, date_list, destination):
+    for idx, site in enumerate(site_list['ids']):
+        site_name = site_list['names'][idx]
+        current_date = date_list[0]
+        while True:
+            try:
+                df = WyomingUpperAir.request_data(current_date, site)
+            except ValueError:
+                current_date += date_list[2]
+            except:# this is for busy server
+                pass
+            else:
+                file_name = site_name + '_' + current_date.strftime('%Y%m%d_%H') + '.csv'
+                df.to_csv(destination + file_name)
+                current_date += date_list[2]
+            finally:
+                if current_date > date_list[1]:
+                    break
+
 
 
 def calc_standard_temp(p):
@@ -109,5 +136,7 @@ def plot_all(datasets, sites, date):
         plot_it(datasets, sites, i, date)
 
 
-datasets = download_list(sites, date)
-plot_all(datasets, sites, date)
+#datasets = download_list(sites, date)
+#plot_all(datasets, sites, date)
+
+download_sonde_to_csv(sites_2, dates, './data/')

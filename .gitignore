@@ -9,6 +9,12 @@
 *.png
 *.jpg
 
+# Temporary Datasets and Plots
+data
+plots
+.data/
+.plots/
+
 # Python runtime
 *.pyc
 *.egg-info
