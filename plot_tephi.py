@@ -5,6 +5,8 @@ import requests
 import pandas
 from datetime import datetime, timedelta
 from siphon.simplewebservice.wyoming import WyomingUpperAir
+from metpy.calc import dewpoint_from_relative_humidity
+from metpy.units import units as units
 
 # Number of attempts to download a file from the server
 NUMBER_TRIES = 20
@@ -33,6 +35,27 @@ class TimeInterval:
         self.start = start
         self.end = end
         self.delta = delta
+
+
+class TempDataNCAS:
+    def __init__(self, dataframe):
+        p_data = [p/100 for p in dataframe[' Pressure (Pascal)'].tolist() if (p/100) > P_DATA_THRESHOLD]
+        self.data = zip(p_data, dataframe[' Temperature (C)'].tolist())
+        self.color = 'red'
+        self.name = "TEMPERATURE"
+
+
+class DewDataNCAS:
+    def __init__(self, dataframe):
+        p_data = [p/100 for p in dataframe[' Pressure (Pascal)'].tolist() if (p/100) > P_DATA_THRESHOLD]
+        t_data = [t for t in dataframe[' Temperature (C)'].tolist()]
+        rh_data = [rh for rh in dataframe[' Relative humidity (%)'].tolist()]
+        dew_data = []
+        for i in range(len(rh_data)):
+            dew_data.append(dewpoint_from_relative_humidity(t_data[i] * units.degC, rh_data[i] * units.percent).m)
+        self.data = zip(p_data, dew_data)
+        self.color = 'blue'
+        self.name = "DEWPOINT"
 
 
 class TempDataframe:
@@ -195,3 +218,10 @@ plot_tephi([SAM, isobar_850, isotherm_m20, entropy_20], 'ISOLINES', './plots/')
 # -------------------------------------------------------------
 empty = Empty()
 plot_tephi([empty], 'EMPTY', './plots/')
+
+# Example Cup-sonde Tephigram
+# -------------------------------------------------------------
+df_balloon = pandas.read_csv('.\\data\\NCAS_BALLON.csv')
+NCAS_Balloon_T = TempDataNCAS(df_balloon)
+NCAS_Balloon_dew = DewDataNCAS(df_balloon)
+plot_tephi([NCAS_Balloon_T, NCAS_Balloon_dew], 'NCAS BALLOON', './plots/')
