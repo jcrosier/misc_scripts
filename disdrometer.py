@@ -1,6 +1,11 @@
 import numpy as np
 import os
 
+DIAMETER_BIN0_LOWER_LIMIT = 0.125
+DIAMETER_BIN_WIDTHS = ([0.125]*3)+([0.25]*6)+([0.5]*12)+([1.0])
+
+VELOCITY_BIN0_LOWER_LIMIT = 0.0
+VELOCITY_BIN_WIDTHS = ([0.2]*5)+([0.4]*6)+([0.8]*7)+([1.0])+([10.0])
 
 # create global array with D bins
 # create global array with V bins
@@ -31,4 +36,5 @@ def load_thies(fname):
             else:
                 print(f'Unrecognised length for line#{idx} in {os.path.basename(fname)}')
 
-load_thies('C:/Users/jonny/OneDrive - The University of Manchester/Research/Projects/NCAS/Disdrometers/202404220000_distrometer_1min.txt')
+
+load_thies('C:/Users/jonny/OneDrive - The University of Manchester/Datasets/Thies/202404220000_distrometer_1min.txt')
